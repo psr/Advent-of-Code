@@ -1,3 +1,5 @@
+from math import prod
+
 def parse_game(id_: int, line: str):
     game_id, game = line.split(':', 2)
     assert game_id == f"Game {id_}" 
@@ -43,3 +45,21 @@ assert(part_one_answer(example1)) == 8
 
 with open('inputs/day2.txt', 'r', encoding='utf-8') as input_:
     print(f"{part_one_answer(input_)=}")
+
+def cubes_required(game, colour):
+    return max(cubes.get(colour, 0) for cubes in game)
+
+assert cubes_required(parse_game(1, example1[0]), 'red') == 4
+
+def power_for_game(game):
+    return prod(cubes_required(game, colour) for colour in {'red', 'green', 'blue'})
+
+assert power_for_game(parse_game(1, example1[0])) == 48
+
+
+def part_two_answer(input_):
+    return sum(power_for_game(parse_game(i, line)) for i, line in enumerate(input_, start=1))
+
+
+with open('inputs/day2.txt', 'r', encoding='utf-8') as input_:
+    print(f"{part_two_answer(input_)=}")
