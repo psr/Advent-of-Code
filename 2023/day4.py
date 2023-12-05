@@ -1,3 +1,5 @@
+from collections import Counter
+
 example1 = """Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
 Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19
 Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1
@@ -25,3 +27,25 @@ def part_1(lines):
 
 with open('inputs/day4.txt', 'r', encoding='utf-8') as input_:
     print(f"{part_1(input_)=}")
+
+
+
+def process_cards(cards):
+    counter = Counter()
+    for i, card in enumerate(cards):
+        count_of_card = counter.pop(i, 0) + 1
+        yield count_of_card
+        winning, picked = card
+        cards_won = len(winning & picked)
+        next_card = i + 1
+        cards_we_get_copies_of = range(next_card, next_card + cards_won)
+        counter.update({c: count_of_card for c in cards_we_get_copies_of})
+
+def part_2(lines):
+    cards = (parse_card(l) for l in lines)
+    return sum(process_cards(cards))
+
+assert part_2(example1) == 30
+
+with open('inputs/day4.txt', 'r', encoding='utf-8') as input_:
+    print(f"{part_2(input_)=}")
