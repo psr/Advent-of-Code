@@ -1,3 +1,5 @@
+from collections import Counter
+
 example = """32T3K 765
 T55J5 684
 KK677 28
@@ -7,7 +9,11 @@ QQQJA 483""".splitlines()
 scores = "23456789TJQKA"
 from itertools import groupby
 score_card = scores.index
+
 score_hand = lambda h: tuple(sorted((len(list(g)) for k, g in  groupby(sorted(h))), reverse=True))
+def score_hand(hand: str):
+    c = Counter(hand)
+    sorted(c.values(), reverse=True)
 
 assert score_hand("QQQJA") == (3, 1, 1)
 assert score_hand("KK677") == (2, 2, 1)
@@ -35,13 +41,13 @@ scores2 = "J23456789TQKA"
 score_card2 = scores2.index
 
 def score_hand2(hand):
-    jokers = hand.count('J')
-    try:
-        best, *rest = score_hand(hand.replace('J', ''))
-    except ValueError:
-        assert jokers == 5
-        return (jokers,)
-    return (best + jokers, *rest)
+    c = Counter(hand)
+    jokers = c.pop('J', 0)
+    rank = sorted(c.values(), reverse=True)
+    if not rank:
+        return [jokers]
+    rank[0] += jokers
+    return rank
 
 def score_line2(parsed_line):
     hand, bid = parsed_line
