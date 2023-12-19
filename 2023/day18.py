@@ -1,4 +1,5 @@
-from itertools import cycle, tee
+from functools import partial
+from itertools import accumulate, cycle, pairwise, tee
 import re
 
 
@@ -40,7 +41,7 @@ def find_edge_directions(edge_cells):
     # Advance b and c
     next(b); next(c); next(c)
     for coming_from, on, going_to in zip(a, b, c):
-        print(on, going_to - coming_from)
+        # print(on, going_to - coming_from)
         yield (on, going_to - coming_from)
 assert len(eg_dict := dict(find_edge_directions(interpret(parse(example))))) == 38
 assert eg_dict[(0+0j)] == (1-1j), eg_dict[(0+0j)]
@@ -80,7 +81,7 @@ def part_1(input_):
     edge_directions = dict(find_edge_directions(edge_cells))
     internal_cells = list(find_internal_cells(edge_directions))
     assert not edge_directions.keys() & internal_cells
-    print_thing(set(edge_directions) | set(internal_cells))
+    # print_thing(set(edge_directions) | set(internal_cells))
     return len(edge_directions) + len(set(internal_cells))
 assert part_1(example) == 62
 
@@ -91,5 +92,45 @@ with open('inputs/day18.txt', 'r', encoding='utf-8') as input_:
 
 print(f"{part_1(day18)=}")
 
-# print_thing(set(dict(interpret(parse(day18)))) | set(find_internal_cells(dict(interpret(parse(day18))))))
 
+## Read up on Pick's theorem and the shoelace formula on Wikipedia, having browsed the AoC reddit, and seeing it mentioned a lot.
+
+# The basic idea seems to be that given the area you can work out the area using the shoelace formula, 
+# which basically sums the areas of a number of trapezoids created by drawing lines down from an edge to one of the axes.
+
+# Picks theorem is then a means of going from an area (possibly non-integer, to a number of points at integer coordinates- or vice versa).
+# It needs the number of points on the boundary and the number of points in the interior to work out the area. We can easily work
+# out the number of points on the boundary (helps that the lines are all horizontal or vertical),
+# We just need to solve to find the internal points.
+new_rule = re.compile(r'([0-9a-zA-Z]{5})([0-3])')
+new_directions = [1+0j, 0+1j, -1+0j, 0-1j]
+fromhex = partial(int, base=16)  # Feel like this already exists?
+def parse2(input_):
+    for match in new_rule.finditer(input_):
+        scale, direction = map(fromhex, match.groups())
+        yield scale * new_directions[direction], scale  # Vector, points on line
+
+def find_area(movements):
+    coordinates = accumulate(movements)
+    edges = pairwise(coordinates)
+    return abs(0.5 * sum((p1.imag + p2.imag) * (p1.real - p2.real) for p1, p2 in edges))
+
+assert find_area([2, 2j, -2, -2j]) == 4.0
+
+def find_internal_points(area, boundary_points):
+    return int(area + 1 - boundary_points / 2)
+
+assert find_internal_points(10, 8) == 7
+assert find_internal_points(4, 8) == 1
+
+def part_2(input_):
+    directions, points_per_edge = zip(*parse2(input_))
+    area = find_area(directions)
+    boundary_points = sum(points_per_edge)
+    internal_points = find_internal_points(area, boundary_points)
+    return boundary_points + internal_points
+
+assert part_2(example) == 952408144115, part_2(example)
+print(f"{part_2(day18)=}")
+
+# I must admit that was much better than the winding number business!
