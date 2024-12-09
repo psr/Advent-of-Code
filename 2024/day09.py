@@ -36,19 +36,26 @@ def reorder_blocks_2(disk_map):
     while queue:
         file_no, used, free = queue.popleft()
         yield from repeat(file_no, used)
-        popped = deque()
-        while free and queue:
-            file_no_2, used_2, free_2 = queue.pop()
-            if used_2 <= free and file_no_2 != None:
-                yield from repeat(file_no_2, used_2)
-                free -= used_2
-                popped.appendleft((None, used_2, free_2))
-            else:
-                popped.appendleft((file_no_2, used_2, free_2))
-        queue.extend(popped)
-        if free:
-            yield from repeat(None, free)
-
+        if not free:
+            continue
+        rotation = 0
+        max_rotation = len(queue)
+        while rotation < max_rotation:
+            moved_file_no, moved_used, moved_free = queue[-1]
+            if moved_file_no is not None and moved_used <= free:
+                queue.pop()
+                yield from repeat(moved_file_no, moved_used)
+                queue.append((None, moved_used, moved_free))
+                free -= moved_used
+            if not free:
+                break
+            rotation += 1
+            queue.rotate()
+        if rotation not in {0, max_rotation}:
+            queue.rotate(-rotation)
+        yield from repeat(None, free)
+        while queue and queue[-1][0] is None:
+            queue.pop()
 
 def part_2(input_):
     disk_map = parse(input_)
