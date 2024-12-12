@@ -7,8 +7,11 @@ example = b"""\
 1 3 6 7 9
 """.splitlines()
 
+
 def parse_line(line):
     return [int(s) for s in line.split()]
+
+
 assert parse_line(example[0]) == [7, 6, 4, 2, 1]
 
 
@@ -30,11 +33,15 @@ def is_safe_(predicate, report):
 
 
 def is_safe(report):
-    return (is_safe_(is_safely_ascending, report)
-            or is_safe_(is_safely_descending, report))
+    report_safe = is_safe_(is_safely_ascending, report)
+    report_safe |= is_safe_(is_safely_descending, report)
+    return report_safe
+
 
 def part_1(input_):
     return sum(is_safe(r) for r in parse(input_))
+
+
 assert part_1(example) == 2
 
 
@@ -70,10 +77,14 @@ def scan_for_discontinuity(predicate, report):
     # member of the inconsistent pair.
     # However we need to special case the start of the report
     assert left == right
-    return (left == 0  # If the inconsistency is at the start, we can always fix
-            or left == len(report) - 2 # Same for the end
-            or predicate(report[left - 1], report[left + 1]) # Skip first
-            or predicate(report[left], report[left + 2])) # Skip second
+    return (
+        left == 0  # If the inconsistency is at the start, we can always fix
+        or left == len(report) - 2  # Same for the end
+        or predicate(report[left - 1], report[left + 1])  # Skip first
+        or predicate(report[left], report[left + 2])  # Skip second
+    )
+
+
 assert scan_for_discontinuity(is_safely_ascending, [1, 3, 2, 4, 5])
 assert scan_for_discontinuity(is_safely_ascending, [1, 9, 2, 4, 5])
 assert scan_for_discontinuity(is_safely_ascending, [9, 1, 2, 4, 5])
@@ -82,19 +93,20 @@ assert scan_for_discontinuity(is_safely_ascending, [17, 19, 17, 20, 23])
 
 
 def is_safe_tolerant(report):
-    return (scan_for_discontinuity(is_safely_ascending, report)
-            or scan_for_discontinuity(is_safely_descending, report))
+    return scan_for_discontinuity(
+        is_safely_ascending, report
+    ) or scan_for_discontinuity(is_safely_descending, report)
 
 
 def part_2(input_):
     return sum(is_safe_tolerant(r) for r in parse(input_))
+
+
 assert part_2(example) == 4
 
 
-if __name__ == '__main__':
-    with open('inputs/day02.txt', 'rb') as day02:
+if __name__ == "__main__":
+    with open("inputs/day02.txt", "rb") as day02:
         print(f"{part_1(day02)=}")
-    with open('inputs/day02.txt', 'rb') as day02:
+    with open("inputs/day02.txt", "rb") as day02:
         print(f"{part_2(day02)=}")
-
-

@@ -17,15 +17,16 @@ example = """\
 ............
 """.splitlines()
 
+
 def parse(input_):
     input_ = (l.strip() for l in input_)
     antenae = defaultdict(list)
     for row, line in enumerate(input_):
         for col, c in enumerate(line):
-            if c == '.':
+            if c == ".":
                 continue
             antenae[c].append(complex(col, row))
-    width, height = col + 1, row+1
+    width, height = col + 1, row + 1
     return (width, height), antenae.values()
 
 
@@ -36,11 +37,18 @@ def find_antinodes_1(antanae):
 def part_1(input_):
     (width, height), antanae_for_frequencies = parse(input_)
     is_in_bounds = lambda antinode: (
-        (0 <= antinode.real < width)
-        and (0 <= antinode.imag < height))
-    return len({n for antanae in antanae_for_frequencies
-                for n in find_antinodes_1(antanae)
-                if is_in_bounds(n)})
+        (0 <= antinode.real < width) and (0 <= antinode.imag < height)
+    )
+    return len(
+        {
+            n
+            for antanae in antanae_for_frequencies
+            for n in find_antinodes_1(antanae)
+            if is_in_bounds(n)
+        }
+    )
+
+
 assert part_1(example) == 14
 
 
@@ -60,19 +68,22 @@ def find_antinodes_2(in_bounds, antanae):
 def part_2(input_):
     (width, height), antanae_for_frequencies = parse(input_)
     is_in_bounds = lambda antinode: (
-        (0 <= antinode.real < width)
-        and (0 <= antinode.imag < height))
-    return len({n for antanae in antanae_for_frequencies
-                for n in find_antinodes_2(is_in_bounds, antanae)})
+        (0 <= antinode.real < width) and (0 <= antinode.imag < height)
+    )
+    return len(
+        {
+            n
+            for antanae in antanae_for_frequencies
+            for n in find_antinodes_2(is_in_bounds, antanae)
+        }
+    )
+
+
 assert part_2(example) == 34
 
 
-if __name__ == '__main__':
-    with open('inputs/day08.txt', 'r', encoding='utf-8') as day08:
+if __name__ == "__main__":
+    with open("inputs/day08.txt", "r", encoding="utf-8") as day08:
         print(f"{part_1(day08)=}")
-    with open('inputs/day08.txt', 'r', encoding='utf-8') as day08:
+    with open("inputs/day08.txt", "r", encoding="utf-8") as day08:
         print(f"{part_2(day08)=}")
-
-
-
-

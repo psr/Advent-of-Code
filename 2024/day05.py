@@ -33,16 +33,15 @@ example = """\
 97,13,75,29,47
 """.splitlines()
 
-        
+
 def parse(input_):
     input_ = (l.strip() for l in input_)
     rules = defaultdict(set)
-    rules_lines = takewhile(lambda l:l, input_)
+    rules_lines = takewhile(lambda l: l, input_)
     for line in rules_lines:
-        a, b = line.split('|', 2)
+        a, b = line.split("|", 2)
         rules[int(a)].add(int(b))
-    update_lines = (
-        [int(s) for s in l.split(',')] for l in input_)
+    update_lines = ([int(s) for s in l.split(",")] for l in input_)
     return rules, update_lines
 
 
@@ -54,8 +53,10 @@ def is_sorted(rules, update):
 def part_1(input_):
     rules, updates = parse(input_)
     valid_updates = filter(lambda u: is_sorted(rules, u), updates)
-    middle_elements = (u[len(u)//2] for u in valid_updates)
+    middle_elements = (u[len(u) // 2] for u in valid_updates)
     return sum(middle_elements)
+
+
 assert part_1(example) == 143
 
 
@@ -66,6 +67,7 @@ def make_cmp_pages(rules):
         if a in rules[b]:
             return 1
         return 0
+
     return cmp_pages
 
 
@@ -74,17 +76,15 @@ def part_2(input_):
     invalid_updates = filter(lambda u: not is_sorted(rules, u), updates)
     key = cmp_to_key(make_cmp_pages(rules))
     sorted_updates = (sorted(u, key=key) for u in invalid_updates)
-    middle_elements = (u[len(u)//2] for u in sorted_updates)
+    middle_elements = (u[len(u) // 2] for u in sorted_updates)
     return sum(middle_elements)
+
+
 assert part_2(example) == 123
-    
 
-if __name__ == '__main__':
-    with open('inputs/day05.txt', 'r', encoding='utf-8') as day05:
+
+if __name__ == "__main__":
+    with open("inputs/day05.txt", "r", encoding="utf-8") as day05:
         print(f"{part_1(day05)=}")
-    with open('inputs/day05.txt', 'r', encoding='utf-8') as day05:
+    with open("inputs/day05.txt", "r", encoding="utf-8") as day05:
         print(f"{part_2(day05)=}")
-
-
-
-
