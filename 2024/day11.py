@@ -1,4 +1,4 @@
-from functools import cache
+from collections import Counter
 from math import floor, log10
 
 example = """\
@@ -20,19 +20,23 @@ def blink(stone):
     return divmod(stone, 10 ** (digits // 2))
 
 
-@cache
-def count_stones(stone, blinks):
-    if not blinks:
-        return 1
-    left, right = blink(stone)
-    left_stones = count_stones(left, blinks - 1)
-    right_stones = 0 if right is None else count_stones(right, blinks - 1)
-    return left_stones + right_stones
+def count_stones(stones, blinks):
+    stones = Counter(stones)
+    for _ in range(blinks):
+        next_stones = Counter()
+        for stone, count in stones.items():
+            left, right = blink(stone)
+            next_stones[left] += count
+            if right is not None:
+                next_stones[right] += count
+        stones = next_stones
+    print(len(stones))
+    return stones.total()
 
 
 def part_1(input_):
     stones = parse(input_)
-    return sum(count_stones(s, 25) for s in stones)
+    return count_stones(stones, 25)
 
 
 assert part_1(example) == 55312
@@ -40,7 +44,7 @@ assert part_1(example) == 55312
 
 def part_2(input_):
     stones = parse(input_)
-    return sum(count_stones(s, 75) for s in stones)
+    return count_stones(stones, 75)
 
 
 if __name__ == "__main__":
