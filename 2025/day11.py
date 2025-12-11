@@ -1,5 +1,6 @@
 import fileinput
 from collections import defaultdict, deque, namedtuple
+from functools import partial
 
 example1 = """\
 aaa: you hhh
@@ -29,22 +30,8 @@ def parse(input_):
     return graph
 
 
-def find_reachable(graph, start, *, restrict=None):
-    if restrict is None:
-        restrict = graph.keys()
-    reachable = set()
-    # BFS forwards, marking nodes as reachable
-    queue = deque([start])
-    while queue:
-        key = queue.popleft()
-        if key in reachable:
-            continue
-        reachable.add(key)
-        queue.extend(graph[key].outgoing & restrict)
-    return reachable
-
-
-def find_reverse_reachable(graph, restrict, start):
+def find_reachable(graph, start, *, subgraph=None, backwards=False):
+    subgraph = graph.keys() if subgraph is None else subgraph
     reachable = set()
     queue = deque([start])
     while queue:
@@ -52,12 +39,13 @@ def find_reverse_reachable(graph, restrict, start):
         if key in reachable:
             continue
         reachable.add(key)
-        queue.extend(graph[key].incoming & restrict)
+        next_keys = graph[key].incoming if backwards else graph[key].outgoing
+        queue.extend(next_keys & subgraph)
     return reachable
 
 
-def count_paths(graph, reachable, start, end):
-    assert start in reachable and end in reachable
+def count_paths(graph, subgraph, start, end):
+    assert start in subgraph and end in subgraph
     counts = {}
     # BFS backwards, counting paths
     queue = deque([end])
@@ -66,15 +54,14 @@ def count_paths(graph, reachable, start, end):
         node = graph[key]
         if key in counts:
             continue
-        unprocessed_downstream = node.outgoing & reachable - counts.keys()
+        unprocessed_downstream = node.outgoing & subgraph - counts.keys()
         if unprocessed_downstream:
             # Delay processing this node until later.
-            queue.extend(unprocessed_downstream)
             queue.append(key)
             continue
-        reachable_upstream = node.incoming & reachable
+        reachable_upstream = node.incoming & subgraph
         queue.extend(reachable_upstream)
-        counts[key] = sum(counts[out] for out in node.outgoing & reachable) or 1
+        counts[key] = sum(counts[out] for out in node.outgoing & subgraph) or 1
     return counts[start]
 
 
@@ -105,21 +92,22 @@ hhh: out
 
 
 def part_2(graph):
-    reachable_from_svr = find_reachable(graph, "svr")
+    find_reachable_ = partial(find_reachable, graph)
+    reachable_from_svr = find_reachable_("svr")
     assert all(k in reachable_from_svr for k in {"svr", "dac", "fft", "out"})
-    reachable_from_fft = find_reachable(graph, "fft", restrict=reachable_from_svr)
-    # Maybe a worthwhile optimisation: The output is reachable from
-    # the svr, dac and fft.  But either the dac is reachable from the
-    # fft, or vice versa, but not both.  Otherwise there would be a
-    # cycle, which we're presuming doesn't happen.
+    reachable_from_fft = find_reachable_("fft", subgraph=reachable_from_svr)
+    # out is reachable from the svr, dac and fft.  But either the dac
+    # is reachable from the fft, or vice versa, but not both.
+    # Otherwise there would be a cycle, which we're presuming doesn't
+    # happen.
     if "dac" in reachable_from_fft:
         first_label, second_label = "fft", "dac"
-        upstream_subgraph = reachable_from_fft
-        downstream_subgraph = find_reachable(graph, "dac", restrict=reachable_from_fft)
+        upper_subgraph = reachable_from_fft
+        lower_subgraph = find_reachable_("dac", subgraph=reachable_from_fft)
     else:
         first_label, second_label = "dac", "fft"
-        upstream_subgraph = find_reachable(graph, "dac", restrict=reachable_from_svr)
-        downstream_subgraph = reachable_from_fft
+        upper_subgraph = find_reachable_("dac", subgraph=reachable_from_svr)
+        lower_subgraph = reachable_from_fft
 
     # Pretty sure this is unnecessary, but it fixes bugs in
     # count_paths(). The issue is with the requeuing, which needs to
@@ -127,9 +115,12 @@ def part_2(graph):
     # visited. I can't see a way to easily apply a proper fix in
     # there, so I'm just further restricting the nodes I visit to ones
     # that are definitely going to be on a path.
-    subgraph1 = find_reverse_reachable(graph, reachable_from_svr, first_label)
-    subgraph2 = find_reverse_reachable(graph, upstream_subgraph, second_label)
-    subgraph3 = find_reverse_reachable(graph, downstream_subgraph, "out")
+    def restrict_subgraph(subgraph, label):
+        return find_reachable_(label, backwards=True, subgraph=subgraph)
+
+    subgraph1 = restrict_subgraph(reachable_from_svr, first_label)
+    subgraph2 = restrict_subgraph(upper_subgraph, second_label)
+    subgraph3 = restrict_subgraph(lower_subgraph, "out")
 
     paths1 = count_paths(graph, subgraph1, "svr", first_label)
     paths2 = count_paths(graph, subgraph2, first_label, second_label)
